@@ -17,6 +17,15 @@ jar {
     }
 }
 
+task customFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'net.pandette.App'
+    }
+    baseName = 'all-in-one-jar'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
