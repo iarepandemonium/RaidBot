@@ -1,0 +1,5 @@
+BotConfiguration.json
+.gradle/
+.idea/
+build/
+configs/
