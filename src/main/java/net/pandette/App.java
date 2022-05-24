@@ -58,9 +58,6 @@ public class App {
         }
 
         jda = createJDA();
-
-
-
     }
 
     private static JDA createJDA() {
