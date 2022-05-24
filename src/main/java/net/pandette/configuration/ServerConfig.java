@@ -11,4 +11,10 @@ public class ServerConfig {
 
     @SerializedName("data")
     private Map<String, List<String>> data;
+
+    @SerializedName("outputChannel")
+    private String outputChannel;
+
+    @SerializedName("adminChannel")
+    private String adminChannel;
 }

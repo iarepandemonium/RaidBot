@@ -2,11 +2,11 @@ package net.pandette.discord;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.pandette.App;
 import net.pandette.configuration.ServerConfig;
 import net.pandette.utils.Utility;
@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class DiscordListener extends ListenerAdapter {
 
@@ -35,29 +36,12 @@ public class DiscordListener extends ListenerAdapter {
                 .addOption(OptionType.INTEGER, "index", "Index between 0 & list length minus 1.", true)
                 .queue();
 
+        App.getJda().upsertCommand("raidconfig", "Sets the raid configuration channel")
+                .addOption(OptionType.STRING, "type", "Admin or Display", true)
+                .addOption(OptionType.STRING, "channelid", "Discord id of the channel", true)
+                .queue();
+
     }
-
-
-//    @Override
-//    public void onReady(@Nonnull ReadyEvent event) {
-//        for (Guild g : event.getJDA().getGuilds()) {
-//            applyCommand(g);
-//        }
-//    }
-//
-//    private void applyCommand(Guild g) {
-//        g.upsertCommand("raidinfo", "Get info about a specific raid")
-//                .addOption(OptionType.STRING, "raid", "The name of the raid", true)
-//                .queue();
-//        g.upsertCommand("addraidinfo", "Add info to the raid info list")
-//                .addOption(OptionType.STRING, "raid", "The name of the raid", true)
-//                .addOption(OptionType.STRING, "data", "Data to add to the raid documentation", true)
-//                .queue();
-//        g.upsertCommand("removeraidinfo", "Remove info from the raid info list")
-//                .addOption(OptionType.STRING, "raid", "The name of the raid", true)
-//                .addOption(OptionType.INTEGER, "index", "Index between 0 & list length minus 1.", true)
-//                .queue();
-//    }
 
     @Override
     public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
@@ -79,6 +63,11 @@ public class DiscordListener extends ListenerAdapter {
         if (config.getData() == null) config.setData(new HashMap<>());
 
         if (event.getName().equalsIgnoreCase("raidinfo")) {
+            if (config.getOutputChannel() == null || !event.getChannel().getId().equals(config.getOutputChannel())) {
+                event.reply("This channel is not a channel used to display raid info.").queue();
+                return;
+            }
+
             String raidName = event.getOption("raid").getAsString();
             if (!config.getData().containsKey(raidName) || config.getData().get(raidName).isEmpty()) {
                 event.reply("The raid specified does not have any data associated with it.").queue();
@@ -93,6 +82,11 @@ public class DiscordListener extends ListenerAdapter {
         }
 
         if (event.getName().equalsIgnoreCase("addraidinfo")) {
+            if (config.getAdminChannel() == null || !event.getChannel().getId().equals(config.getAdminChannel())) {
+                event.reply("This channel is not a channel to use raid admin commands!").queue();
+                return;
+            }
+
             String raidName = event.getOption("raid").getAsString();
             String data = event.getOption("data").getAsString();
             List<String> dataList = config.getData().getOrDefault(raidName, new ArrayList<>());
@@ -109,6 +103,11 @@ public class DiscordListener extends ListenerAdapter {
         }
 
         if (event.getName().equalsIgnoreCase("removeraidinfo")) {
+            if (config.getAdminChannel() == null || !event.getChannel().getId().equals(config.getAdminChannel())) {
+                event.reply("This channel is not a channel to use raid admin commands!").queue();
+                return;
+            }
+
             String raidName = event.getOption("raid").getAsString();
             int index = event.getOption("index").getAsInt();
             List<String> dataList = config.getData().getOrDefault(raidName, new ArrayList<>());
@@ -128,6 +127,37 @@ public class DiscordListener extends ListenerAdapter {
             return;
         }
 
+        if (event.getName().equalsIgnoreCase("raidconfig")) {
+            if (event.getMember() == null) return;
+
+            if (!PermissionUtil.checkPermission(event.getMember(), Permission.ADMINISTRATOR)) {
+                event.reply("You need administrator in this server to make these changes").queue();
+                return;
+            }
+
+            String channelid = event.getOption("channelid").getAsString();
+
+            switch (event.getOption("type").getAsString().toUpperCase(Locale.ROOT)) {
+                case "DISPLAY":
+                    config.setOutputChannel(channelid);
+                    event.reply("Output channel set to " + channelid).queue();
+                    ;
+                    break;
+                case "ADMIN":
+                    config.setAdminChannel(channelid);
+                    event.reply("Admin channel set to " + channelid).queue();
+                    break;
+                default:
+                    event.reply("Admin & Display are the only options for this command.").queue();
+                    return;
+            }
+            
+            try {
+                Utility.writeFile(filename, gson.toJson(config));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
 
     }
