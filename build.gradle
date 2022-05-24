@@ -12,30 +12,10 @@ repositories {
 
 jar {
     manifest {
-        attributes 'Class-Path': '/libs/a.jar'
-    }
-}
-
-ext.sharedManifest = manifest {
-    attributes("Implementation-Title": "Gradle",
-            "Implementation-Version": version)
-}
-
-shadowJar {
-    archiveBaseName.set('shadow')
-    archiveClassifier.set('')
-    archiveVersion.set('')
-}
-
-task testJar(type: Jar) {
-    manifest {
-        attributes 'Description': 'This is an application JAR'
-    }
-}
-
-shadowJar {
-    manifest {
-        inheritFrom project.tasks.testJar.manifest
+        attributes (
+                'Class-Path': '/libs/a.jar',
+                'Main-Class': 'net.pandette.App'
+        )
     }
 }
 
