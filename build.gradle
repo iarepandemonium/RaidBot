@@ -27,6 +27,12 @@ shadowJar {
     archiveVersion.set('')
 }
 
+task testJar(type: Jar) {
+    manifest {
+        attributes 'Description': 'This is an application JAR'
+    }
+}
+
 shadowJar {
     manifest {
         inheritFrom project.tasks.testJar.manifest
