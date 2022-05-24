@@ -151,7 +151,7 @@ public class DiscordListener extends ListenerAdapter {
                     event.reply("Admin & Display are the only options for this command.").queue();
                     return;
             }
-            
+
             try {
                 Utility.writeFile(filename, gson.toJson(config));
             } catch (IOException e) {
