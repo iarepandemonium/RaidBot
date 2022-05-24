@@ -45,7 +45,6 @@ public class DiscordListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
-        System.out.println(event.getName());
         File configs = new File("configs");
         if (!configs.exists()) configs.mkdirs();
         String filename = "configs/" + event.getGuild().getId() + ".json";
