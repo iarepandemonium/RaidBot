@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group 'net.pandette'
@@ -11,9 +12,7 @@ repositories {
 
 jar {
     manifest {
-        attributes(
-                'Main-Class': 'net.pandette.App'
-        )
+        attributes 'Class-Path': '/libs/a.jar'
     }
 }
 
@@ -22,20 +21,15 @@ ext.sharedManifest = manifest {
             "Implementation-Version": version)
 }
 
-task uberJar(type: Jar) {
-    archiveClassifier = 'uber'
+shadowJar {
+    archiveBaseName.set('shadow')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+}
 
+shadowJar {
     manifest {
-        attributes 'Implementation-Title': 'Raid Bot',
-                'Implementation-Version': 1.0,
-                'Main-Class': 'net.pandette.App'
-    }
-
-    from sourceSets.main.output
-
-    dependsOn configurations.runtimeClasspath
-    from {
-        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+        inheritFrom project.tasks.testJar.manifest
     }
 }
 
