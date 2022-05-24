@@ -17,8 +17,19 @@ jar {
     }
 }
 
+ext.sharedManifest = manifest {
+    attributes("Implementation-Title": "Gradle",
+            "Implementation-Version": version)
+}
+
 task uberJar(type: Jar) {
     archiveClassifier = 'uber'
+
+    manifest {
+        attributes 'Implementation-Title': 'Raid Bot',
+                'Implementation-Version': 1.0,
+                'Main-Class': 'net.pandette.App'
+    }
 
     from sourceSets.main.output
 
