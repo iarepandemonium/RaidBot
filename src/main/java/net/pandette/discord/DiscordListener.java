@@ -191,6 +191,11 @@ public class DiscordListener extends ListenerAdapter {
                     if (d.getPingRole().equalsIgnoreCase(ping.getId())) {
                         config.getPingData().remove(d);
                         event.reply("Ping data for " + ping.getName() + " has been removed.").queue();
+                        try {
+                            Utility.writeFile(filename, gson.toJson(config));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         return;
                     }
                 }
