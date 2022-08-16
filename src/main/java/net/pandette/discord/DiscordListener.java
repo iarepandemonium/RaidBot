@@ -336,10 +336,12 @@ public class DiscordListener extends ListenerAdapter {
             }
         }
 
+        if (rolesToMention.isEmpty()) return;
+
         StringBuilder builder = new StringBuilder();
 
         for (String r : rolesToMention) {
-            builder.append("<@").append(r).append("> ");
+            builder.append("<@&").append(r).append("> ");
         }
 
         event.getChannel().sendMessage(builder.toString()).queue();
