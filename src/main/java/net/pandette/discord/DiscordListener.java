@@ -179,6 +179,7 @@ public class DiscordListener extends ListenerAdapter {
             if (event.getOption("remove") != null) {
                 cancel = event.getOption("remove").getAsBoolean();
             }
+
             if (cancel != null && cancel) {
                 for (PingData d : new ArrayList<>(config.getPingData())) {
                     if (d.getPingRole().equalsIgnoreCase(ping.getId())) {
@@ -204,7 +205,7 @@ public class DiscordListener extends ListenerAdapter {
                 event.reply("The role " + pingData.getPingRole() + " currently will trigger for " + pingData.getWords()).queue();
                 return;
             } else if (data == null) {
-                event.reply("This ping doesn't currently exist & requires the data field to be filled to set it up.");
+                event.reply("This ping doesn't currently exist & requires the data field to be filled to set it up.").queue();
                 return;
             }
 
@@ -212,6 +213,7 @@ public class DiscordListener extends ListenerAdapter {
             if (pingData != null) config.getPingData().remove(pingData);
             pingData = new PingData(ping.getId(), Arrays.asList(data));
             config.getPingData().add(pingData);
+            event.reply("A new ping was setup for " + ping.getName() + " for the following words " + pingData.getWords()).queue();
         } else if (event.getName().equalsIgnoreCase("raidconfig")) {
             if (event.getMember() == null) return;
 
