@@ -55,8 +55,8 @@ public class DiscordListener extends ListenerAdapter {
 
 
         App.getJda().upsertCommand("raidconfig", "Sets the raid configuration channel")
-                .addOption(OptionType.CHANNEL, "type", "add-admin-channel, remove-admin-channel, add-ping-channel, remove-ping-channel or display", true)
-                .addOption(OptionType.STRING, "channelid", "Discord id of the channel", true)
+                .addOption(OptionType.STRING, "type", "add-admin-channel, remove-admin-channel, add-ping-channel, remove-ping-channel or display", true)
+                .addOption(OptionType.CHANNEL, "channelid", "Discord id of the channel", true)
                 .queue();
     }
 
