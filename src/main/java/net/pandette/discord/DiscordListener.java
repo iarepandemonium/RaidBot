@@ -180,7 +180,6 @@ public class DiscordListener extends ListenerAdapter {
             }
 
 
-
             Boolean cancel = null;
 
             if (event.getOption("remove") != null) {
@@ -315,15 +314,15 @@ public class DiscordListener extends ListenerAdapter {
         if (config.getPingChannels() == null || !config.getPingChannels().contains(event.getChannel().getId())) return;
 
 
-        String[] messageSplit = event.getMessage().getContentRaw().replace("\n", " ").replace(":", " ").toLowerCase(Locale.ROOT).split(" ");
+        String[] messageSplit = splitClean(event.getMessage().getContentRaw());
         List<String> messages = new ArrayList<>(Arrays.asList(messageSplit));
         for (MessageEmbed e : event.getMessage().getEmbeds()) {
-            messages.addAll(Arrays.asList(e.getTitle().toLowerCase().split(" ")));
-            messages.addAll(Arrays.asList(e.getDescription().toLowerCase().split(" ")));
-            messages.addAll(Arrays.asList(e.getAuthor().getName().toLowerCase().split(" ")));
+            messages.addAll(Arrays.asList(splitClean(e.getTitle())));
+            messages.addAll(Arrays.asList(splitClean(e.getDescription())));
+            messages.addAll(Arrays.asList(splitClean(e.getAuthor().getName())));
             for (MessageEmbed.Field field : e.getFields()) {
-                messages.addAll(Arrays.asList(field.getName().toLowerCase().split(" ")));
-                messages.addAll(Arrays.asList(field.getValue().toLowerCase().split(" ")));
+                messages.addAll(Arrays.asList(splitClean(field.getName())));
+                messages.addAll(Arrays.asList(splitClean(field.getValue())));
             }
         }
 
@@ -360,6 +359,11 @@ public class DiscordListener extends ListenerAdapter {
 
         event.getChannel().sendMessage(builder.toString()).queue();
 
+    }
+
+    private String[] splitClean(String split) {
+        if (split == null) return new String[]{};
+        return split.replace("\n", " ").replace("/", " ").replace(":", " ").toLowerCase(Locale.ROOT).split(" ");
     }
 
 }
