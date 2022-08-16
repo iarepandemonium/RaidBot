@@ -321,12 +321,12 @@ public class DiscordListener extends ListenerAdapter {
 
         String[] messageSplit = splitClean(event.getMessage().getContentRaw());
         List<String> messages = new ArrayList<>(Arrays.asList(messageSplit));
-        System.out.println(event.getMessage().getEmbeds());
         for (MessageEmbed e : event.getMessage().getEmbeds()) {
-            System.out.println(e);
             messages.addAll(Arrays.asList(splitClean(e.getTitle())));
             messages.addAll(Arrays.asList(splitClean(e.getDescription())));
-            messages.addAll(Arrays.asList(splitClean(e.getAuthor().getName())));
+            if (e.getAuthor() != null) {
+                messages.addAll(Arrays.asList(splitClean(e.getAuthor().getName())));
+            }
             for (MessageEmbed.Field field : e.getFields()) {
                 messages.addAll(Arrays.asList(splitClean(field.getName())));
                 messages.addAll(Arrays.asList(splitClean(field.getValue())));
