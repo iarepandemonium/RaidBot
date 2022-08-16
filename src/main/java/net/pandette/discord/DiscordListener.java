@@ -212,8 +212,12 @@ public class DiscordListener extends ListenerAdapter {
             if (pingData != null) config.getPingData().remove(pingData);
             pingData = new PingData(ping.getId(), Arrays.asList(data));
             config.getPingData().add(pingData);
-            System.out.println(config);
             event.reply("A new ping was setup for " + ping.getName() + " for the following words " + pingData.getWords()).queue();
+            try {
+                Utility.writeFile(filename, gson.toJson(config));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else if (event.getName().equalsIgnoreCase("raidconfig")) {
             if (event.getMember() == null) return;
 
