@@ -16,5 +16,11 @@ public class ServerConfig {
     private String outputChannel;
 
     @SerializedName("adminChannel")
-    private String adminChannel;
+    private List<String> adminChannel;
+
+    @SerializedName("pingChannels")
+    private List<String> pingChannels;
+
+    @SerializedName("pingData")
+    private List<PingData> pingData;
 }

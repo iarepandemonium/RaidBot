@@ -3,27 +3,37 @@ package net.pandette.discord;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.pandette.App;
+import net.pandette.configuration.PingData;
 import net.pandette.configuration.ServerConfig;
 import net.pandette.utils.Utility;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
 public class DiscordListener extends ListenerAdapter {
 
+    private static final List<String> HELP_COMMANDS = Arrays.asList("?", "help", "list");
+
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public DiscordListener() {
+
         App.getJda().upsertCommand("raidinfo", "Get info about a specific raid")
                 .addOption(OptionType.STRING, "raid", "The name of the raid", true)
                 .queue();
@@ -31,16 +41,23 @@ public class DiscordListener extends ListenerAdapter {
                 .addOption(OptionType.STRING, "raid", "The name of the raid", true)
                 .addOption(OptionType.STRING, "data", "Data to add to the raid documentation", true)
                 .queue();
+
         App.getJda().upsertCommand("removeraidinfo", "Remove info from the raid info list")
                 .addOption(OptionType.STRING, "raid", "The name of the raid", true)
                 .addOption(OptionType.INTEGER, "index", "Index between 0 & list length minus 1.", true)
                 .queue();
 
-        App.getJda().upsertCommand("raidconfig", "Sets the raid configuration channel")
-                .addOption(OptionType.STRING, "type", "Admin or Display", true)
-                .addOption(OptionType.STRING, "channelid", "Discord id of the channel", true)
+        App.getJda().upsertCommand("setpingcheck", "Adds a ping check for specific data")
+                .addOption(OptionType.ROLE, "ping", "The role this ping is created for", true)
+                .addOption(OptionType.STRING, "data", "Comma separated list of things you wish to be regex ie: hello,how,are,you", false)
+                .addOption(OptionType.BOOLEAN, "remove", "If true, this ping will be removed, false does nothing. (I do it this way because lazy.)", false)
                 .queue();
 
+
+        App.getJda().upsertCommand("raidconfig", "Sets the raid configuration channel")
+                .addOption(OptionType.CHANNEL, "type", "add-admin-channel, remove-admin-channel, add-ping-channel, remove-ping-channel or display", true)
+                .addOption(OptionType.STRING, "channelid", "Discord id of the channel", true)
+                .queue();
     }
 
     @Override
@@ -67,7 +84,18 @@ public class DiscordListener extends ListenerAdapter {
                 return;
             }
 
-            String raidName = event.getOption("raid").getAsString();
+            String raidName = event.getOption("raid").getAsString().toLowerCase(Locale.ROOT);
+
+            if (HELP_COMMANDS.contains(raidName)) {
+                StringBuilder builder = new StringBuilder("Raid Info Available:\n");
+                for (String s : config.getData().keySet()) {
+                    builder.append(s).append("\n");
+                }
+                event.reply(builder.toString()).queue();
+                return;
+            }
+
+
             if (!config.getData().containsKey(raidName) || config.getData().get(raidName).isEmpty()) {
                 event.reply("The raid specified does not have any data associated with it.").queue();
                 return;
@@ -78,15 +106,20 @@ public class DiscordListener extends ListenerAdapter {
                 event.getChannel().sendMessage(s).queue();
             }
             return;
-        }
-
-        if (event.getName().equalsIgnoreCase("addraidinfo")) {
-            if (config.getAdminChannel() == null || !event.getChannel().getId().equals(config.getAdminChannel())) {
+        } else if (event.getName().equalsIgnoreCase("addraidinfo")) {
+            if (config.getAdminChannel() == null || !config.getAdminChannel().contains(event.getChannel().getId())) {
                 event.reply("This channel is not a channel to use raid admin commands!").queue();
                 return;
             }
 
-            String raidName = event.getOption("raid").getAsString();
+            String raidName = event.getOption("raid").getAsString().toLowerCase(Locale.ROOT);
+
+            if (HELP_COMMANDS.contains(raidName)) {
+                event.reply("This cannot be a raid name as it is reserved for helper functions.").queue();
+                return;
+            }
+
+
             String data = event.getOption("data").getAsString();
             List<String> dataList = config.getData().getOrDefault(raidName, new ArrayList<>());
             dataList.add(data);
@@ -98,16 +131,20 @@ public class DiscordListener extends ListenerAdapter {
                 throw new RuntimeException(e);
             }
 
-            return;
-        }
 
-        if (event.getName().equalsIgnoreCase("removeraidinfo")) {
-            if (config.getAdminChannel() == null || !event.getChannel().getId().equals(config.getAdminChannel())) {
+        } else if (event.getName().equalsIgnoreCase("removeraidinfo")) {
+            if (config.getAdminChannel() == null || !config.getAdminChannel().contains(event.getChannel().getId())) {
                 event.reply("This channel is not a channel to use raid admin commands!").queue();
                 return;
             }
 
-            String raidName = event.getOption("raid").getAsString();
+            String raidName = event.getOption("raid").getAsString().toLowerCase(Locale.ROOT);
+
+            if (HELP_COMMANDS.contains(raidName)) {
+                event.reply("This cannot be a raid name as it is reserved for helper functions.").queue();
+                return;
+            }
+
             int index = event.getOption("index").getAsInt();
             List<String> dataList = config.getData().getOrDefault(raidName, new ArrayList<>());
             if (index >= dataList.size() || index < 0) {
@@ -123,10 +160,59 @@ public class DiscordListener extends ListenerAdapter {
                 throw new RuntimeException(e);
             }
 
-            return;
-        }
+        } else if (event.getName().equalsIgnoreCase("setpingcheck")){
+            if (config.getAdminChannel() == null || !config.getAdminChannel().contains(event.getChannel().getId())) {
+                event.reply("This channel is not a channel to use raid admin commands!").queue();
+                return;
+            }
 
-        if (event.getName().equalsIgnoreCase("raidconfig")) {
+            if (config.getPingData() == null) config.setPingData(new ArrayList<>());
+            Role ping = event.getOption("ping").getAsRole();
+            String[] data = null;
+
+            if (event.getOption("data") != null) {
+                data = event.getOption("data").getAsString().toLowerCase(Locale.ROOT).replace(", ", ",").replace(" ,", ",").split("[, ]");
+            }
+
+            Boolean cancel = null;
+
+            if (event.getOption("remove") != null) {
+                cancel = event.getOption("remove").getAsBoolean();
+            }
+            if (cancel != null && cancel) {
+                for (PingData d : new ArrayList<>(config.getPingData())) {
+                    if (d.getPingRole().equalsIgnoreCase(ping.getId())) {
+                        config.getPingData().remove(d);
+                        event.reply("Ping data for " + ping.getName() + " has been removed.").queue();
+                        return;
+                    }
+                }
+
+                event.reply("Could not find any ping data for " + ping.getName()).queue();
+                return;
+            }
+
+            PingData pingData = null;
+            for (PingData d : config.getPingData()) {
+                if (d.getPingRole().equalsIgnoreCase(ping.getId())) {
+                    pingData = d;
+                    break;
+                }
+            }
+
+            if (pingData != null && data == null) {
+                event.reply("The role " + pingData.getPingRole() + " currently will trigger for " + pingData.getWords()).queue();
+                return;
+            } else if (data == null) {
+                event.reply("This ping doesn't currently exist & requires the data field to be filled to set it up.");
+                return;
+            }
+
+
+            if (pingData != null) config.getPingData().remove(pingData);
+            pingData = new PingData(ping.getId(), Arrays.asList(data));
+            config.getPingData().add(pingData);
+        } else if (event.getName().equalsIgnoreCase("raidconfig")) {
             if (event.getMember() == null) return;
 
             if (!PermissionUtil.checkPermission(event.getMember(), Permission.ADMINISTRATOR)) {
@@ -134,20 +220,54 @@ public class DiscordListener extends ListenerAdapter {
                 return;
             }
 
-            String channelid = event.getOption("channelid").getAsString();
+            TextChannel channelid = event.getOption("channelid").getAsTextChannel();
 
             switch (event.getOption("type").getAsString().toUpperCase(Locale.ROOT)) {
                 case "DISPLAY":
-                    config.setOutputChannel(channelid);
-                    event.reply("Output channel set to " + channelid).queue();
+                    config.setOutputChannel(channelid.getId());
+                    event.reply("Output channel set to " + channelid.getId()).queue();
                     ;
                     break;
-                case "ADMIN":
-                    config.setAdminChannel(channelid);
-                    event.reply("Admin channel set to " + channelid).queue();
+                case "ADD-ADMIN-CHANNEL":
+                    if (config.getAdminChannel() == null) config.setAdminChannel(new ArrayList<>());
+                    if (!config.getAdminChannel().contains(channelid.getId())) {
+                        config.getAdminChannel().add(channelid.getId());
+                        event.reply("Admin channel added: " + channelid.getId()).queue();
+                    } else {
+                        event.reply("Admin channel already existed in the list!").queue();
+                    }
+                    break;
+                case "REMOVE-ADMIN-CHANNEL":
+                    if (config.getAdminChannel() == null) config.setAdminChannel(new ArrayList<>());
+
+                    if (!config.getAdminChannel().contains(channelid.getId())) {
+                        event.reply("Admin channel wasn't even in this list.").queue();
+                    } else {
+                        config.getAdminChannel().remove(channelid.getId());
+                        event.reply("Admin channel removed: " + channelid.getId()).queue();
+                    }
+                    break;
+                case "ADD-PING-CHANNEL":
+                    if (config.getPingChannels() == null) config.setPingChannels(new ArrayList<>());
+                    if (!config.getPingChannels().contains(channelid.getId())) {
+                        config.getPingChannels().add(channelid.getId());
+                        event.reply("Ping channel added: " + channelid.getId()).queue();
+                    } else {
+                        event.reply("Ping channel already existed in the list!").queue();
+                    }
+                    break;
+                case "REMOVE-PING-CHANNEL":
+                    if (config.getPingChannels() == null) config.setPingChannels(new ArrayList<>());
+
+                    if (!config.getPingChannels().contains(channelid.getId())) {
+                        event.reply("Ping channel wasn't even in this list.").queue();
+                    } else {
+                        config.getPingChannels().remove(channelid.getId());
+                        event.reply("Ping channel removed: " + channelid.getId()).queue();
+                    }
                     break;
                 default:
-                    event.reply("Admin & Display are the only options for this command.").queue();
+                    event.reply("add-admin-channel, remove-admin-channel, add-ping-channel, remove-ping-channel or display are the only options for this command.").queue();
                     return;
             }
 
@@ -157,7 +277,66 @@ public class DiscordListener extends ListenerAdapter {
                 throw new RuntimeException(e);
             }
         }
+    }
 
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        Gson gson = new Gson();
+        File configs = new File("configs");
+        if (!configs.exists()) configs.mkdirs();
+        String filename = "configs/" + event.getGuild().getId() + ".json";
+        File f = new File(filename);
+        ServerConfig config;
+        if (!f.exists()) config = new ServerConfig();
+        else {
+            try {
+                config = gson.fromJson(Utility.readFile(filename), ServerConfig.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (config.getData() == null) config.setData(new HashMap<>());
+
+        if (config.getPingChannels() == null || !config.getPingChannels().contains(event.getChannel().getId())) return;
+
+
+
+        String[] messageSplit = event.getMessage().getContentRaw().replace("\n", " ").replace(":", " ").toLowerCase(Locale.ROOT).split(" ");
+        List<String> messages = new ArrayList<>(Arrays.asList(messageSplit));
+        for (MessageEmbed e : event.getMessage().getEmbeds()) {
+            messages.addAll(Arrays.asList(e.getTitle().toLowerCase().split(" ")));
+            messages.addAll(Arrays.asList(e.getDescription().toLowerCase().split(" ")));
+            messages.addAll(Arrays.asList(e.getAuthor().getName().toLowerCase().split(" ")));
+            for (MessageEmbed.Field field : e.getFields()) {
+                messages.addAll(Arrays.asList(field.getName().toLowerCase().split(" ")));
+                messages.addAll(Arrays.asList(field.getValue().toLowerCase().split(" ")));
+            }
+        }
+
+
+
+        List<String> rolesToMention = new ArrayList<>();
+        for (String s : messages) {
+            for (PingData data : config.getPingData()) {
+                if (rolesToMention.contains(data.getPingRole())) continue;
+                for (String d : data.getWords()) {
+                    String clean = d.trim().toLowerCase(Locale.ROOT);
+                    if (s.equals(clean)) {
+                        rolesToMention.add(data.getPingRole());
+                        break;
+                    }
+                }
+            }
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        for (String r : rolesToMention) {
+            builder.append("<@").append(r).append("> ");
+        }
+
+        event.getChannel().sendMessage(builder.toString()).queue();
 
     }
 
