@@ -51,6 +51,7 @@ public class DiscordListener extends ListenerAdapter {
                 .addOption(OptionType.ROLE, "ping", "The role this ping is created for", true)
                 .addOption(OptionType.STRING, "data", "Comma separated list of things you wish to be regex ie: hello,how,are,you", false)
                 .addOption(OptionType.BOOLEAN, "remove", "If true, this ping will be removed, false does nothing. (I do it this way because lazy.)", false)
+                .addOption(OptionType.INTEGER, "count", "How many words in the list must be present before it will trigger the ping.", false)
                 .queue();
 
 
@@ -159,7 +160,7 @@ public class DiscordListener extends ListenerAdapter {
                 throw new RuntimeException(e);
             }
 
-        } else if (event.getName().equalsIgnoreCase("setpingcheck")){
+        } else if (event.getName().equalsIgnoreCase("setpingcheck")) {
             if (config.getAdminChannel() == null || !config.getAdminChannel().contains(event.getChannel().getId())) {
                 event.reply("This channel is not a channel to use raid admin commands!").queue();
                 return;
@@ -168,10 +169,17 @@ public class DiscordListener extends ListenerAdapter {
             if (config.getPingData() == null) config.setPingData(new ArrayList<>());
             Role ping = event.getOption("ping").getAsRole();
             String[] data = null;
+            Integer count = 1;
 
             if (event.getOption("data") != null) {
                 data = event.getOption("data").getAsString().toLowerCase(Locale.ROOT).replace(", ", ",").replace(" ,", ",").split("[, ]");
             }
+
+            if (event.getOption("count") != null) {
+                count = event.getOption("count").getAsInt();
+            }
+
+
 
             Boolean cancel = null;
 
@@ -210,7 +218,7 @@ public class DiscordListener extends ListenerAdapter {
 
 
             if (pingData != null) config.getPingData().remove(pingData);
-            pingData = new PingData(ping.getId(), Arrays.asList(data));
+            pingData = new PingData(ping.getId(), Arrays.asList(data), count);
             config.getPingData().add(pingData);
             event.reply("A new ping was setup for " + ping.getName() + " for the following words " + pingData.getWords()).queue();
             try {
@@ -307,7 +315,6 @@ public class DiscordListener extends ListenerAdapter {
         if (config.getPingChannels() == null || !config.getPingChannels().contains(event.getChannel().getId())) return;
 
 
-
         String[] messageSplit = event.getMessage().getContentRaw().replace("\n", " ").replace(":", " ").toLowerCase(Locale.ROOT).split(" ");
         List<String> messages = new ArrayList<>(Arrays.asList(messageSplit));
         for (MessageEmbed e : event.getMessage().getEmbeds()) {
@@ -321,18 +328,25 @@ public class DiscordListener extends ListenerAdapter {
         }
 
 
-
         List<String> rolesToMention = new ArrayList<>();
-        for (String s : messages) {
-            for (PingData data : config.getPingData()) {
-                if (rolesToMention.contains(data.getPingRole())) continue;
+        for (PingData data : config.getPingData()) {
+            List<String> words = new ArrayList<>();
+            for (String s : messages) {
                 for (String d : data.getWords()) {
+                    if (words.contains(d)) continue;
                     String clean = d.trim().toLowerCase(Locale.ROOT);
                     if (s.equals(clean)) {
-                        rolesToMention.add(data.getPingRole());
+                        words.add(d);
                         break;
                     }
                 }
+            }
+
+            int num = 1;
+            if (data.getCount() != null) num = data.getCount();
+
+            if (words.size() >= num) {
+                rolesToMention.add(data.getPingRole());
             }
         }
 

@@ -12,4 +12,7 @@ public class PingData {
 
     @SerializedName("words")
     private final List<String> words;
+
+    @SerializedName("count")
+    private final Integer count;
 }
