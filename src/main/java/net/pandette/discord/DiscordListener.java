@@ -105,7 +105,6 @@ public class DiscordListener extends ListenerAdapter {
             for (String s : config.getData().get(raidName)) {
                 event.getChannel().sendMessage(s).queue();
             }
-            return;
         } else if (event.getName().equalsIgnoreCase("addraidinfo")) {
             if (config.getAdminChannel() == null || !config.getAdminChannel().contains(event.getChannel().getId())) {
                 event.reply("This channel is not a channel to use raid admin commands!").queue();
@@ -213,6 +212,7 @@ public class DiscordListener extends ListenerAdapter {
             if (pingData != null) config.getPingData().remove(pingData);
             pingData = new PingData(ping.getId(), Arrays.asList(data));
             config.getPingData().add(pingData);
+            System.out.println(config);
             event.reply("A new ping was setup for " + ping.getName() + " for the following words " + pingData.getWords()).queue();
         } else if (event.getName().equalsIgnoreCase("raidconfig")) {
             if (event.getMember() == null) return;
