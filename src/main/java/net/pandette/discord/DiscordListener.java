@@ -335,7 +335,8 @@ public class DiscordListener extends ListenerAdapter {
 
 
         List<String> rolesToMention = new ArrayList<>();
-        for (PingData data : config.getPingData()) {
+
+        for (PingData data : new ArrayList<>(config.getPingData())) {
             List<String> words = new ArrayList<>();
             for (String s : messages) {
                 for (String d : data.getWords()) {
@@ -352,6 +353,16 @@ public class DiscordListener extends ListenerAdapter {
             if (data.getCount() != null) num = data.getCount();
 
             if (words.size() >= num) {
+                Role role = event.getGuild().getRoleById(data.getPingRole());
+                if (role == null) {
+                    config.getPingData().remove(data);
+                    try {
+                        Utility.writeFile(filename, gson.toJson(config));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    continue;
+                }
                 rolesToMention.add(data.getPingRole());
             }
         }
