@@ -17,7 +17,6 @@ import net.pandette.configuration.ServerConfig;
 import net.pandette.utils.Utility;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
