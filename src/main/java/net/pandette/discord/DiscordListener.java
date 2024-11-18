@@ -266,6 +266,11 @@ public class DiscordListener extends ListenerAdapter {
                     break;
                 case "ADD-PING-CHANNEL":
                     if (config.getPingChannels() == null) config.setPingChannels(new ArrayList<>());
+                    if (channelid == null) {
+                        event.reply("The channelid needs to be a channel to get the id of the channel. If it is not, it will not work.").queue();
+                        break;
+                    }
+
                     if (!config.getPingChannels().contains(channelid.getId())) {
                         config.getPingChannels().add(channelid.getId());
                         event.reply("Ping channel added: " + channelid.getId()).queue();
