@@ -12,7 +12,6 @@ import net.pandette.configuration.BotConfiguration;
 import net.pandette.discord.DiscordListener;
 import net.pandette.utils.Utility;
 
-import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
 
@@ -29,7 +28,7 @@ public class App {
     @Getter
     private static BotConfiguration configuration;
 
-    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     /**
      * The main method which initializes the bot
@@ -45,7 +44,7 @@ public class App {
         }
 
         try {
-            configuration = gson.fromJson(Utility.readFile(BOT_CONFIGURATION_FILE_NAME), BotConfiguration.class);
+            configuration = GSON.fromJson(Utility.readFile(BOT_CONFIGURATION_FILE_NAME), BotConfiguration.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -59,18 +58,14 @@ public class App {
     }
 
     private static JDA createJDA() {
-        try {
-            jda = JDABuilder
-                    .createDefault(configuration.getBotToken())
-                    .setMemberCachePolicy(MemberCachePolicy.ALL)
-                    .enableIntents(GatewayIntent.GUILD_MEMBERS)
+        jda = JDABuilder
+                .createDefault(configuration.getBotToken())
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS)
 
-                    .setChunkingFilter(ChunkingFilter.ALL)
-                    .build();
-            jda.addEventListener(new DiscordListener());
-            return jda;
-        } catch (LoginException e) {
-            throw new RuntimeException("JDA Failed to initialize.");
-        }
+                .setChunkingFilter(ChunkingFilter.ALL)
+                .build();
+        jda.addEventListener(new DiscordListener());
+        return jda;
     }
 }

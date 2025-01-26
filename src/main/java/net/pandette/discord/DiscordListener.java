@@ -5,18 +5,19 @@ import com.google.gson.GsonBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.pandette.App;
 import net.pandette.configuration.PingData;
 import net.pandette.configuration.ServerConfig;
 import net.pandette.utils.Utility;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         File configs = new File("configs");
         if (!configs.exists()) configs.mkdirs();
         String filename = "configs/" + event.getGuild().getId() + ".json";
@@ -237,19 +238,28 @@ public class DiscordListener extends ListenerAdapter {
                 return;
             }
 
-            TextChannel channelid = event.getOption("channelid").getAsTextChannel();
+            final OptionMapping channelID = event.getOption("channelid");
+            if (channelID == null) {
+                event.reply("bot incorrectly configured, missing channelid").queue();
+                return;
+            }
+
+            if (!(channelID.getAsChannel() instanceof final TextChannel textChannel)) {
+                event.reply("bot incorrectly configured, channelid pointing to non text channel").queue();
+                return;
+            }
 
             switch (event.getOption("type").getAsString().toUpperCase(Locale.ROOT)) {
                 case "DISPLAY":
-                    config.setOutputChannel(channelid.getId());
-                    event.reply("Output channel set to " + channelid.getId()).queue();
+                    config.setOutputChannel(textChannel.getId());
+                    event.reply("Output channel set to " + textChannel.getId()).queue();
                     ;
                     break;
                 case "ADD-ADMIN-CHANNEL":
                     if (config.getAdminChannel() == null) config.setAdminChannel(new ArrayList<>());
-                    if (!config.getAdminChannel().contains(channelid.getId())) {
-                        config.getAdminChannel().add(channelid.getId());
-                        event.reply("Admin channel added: " + channelid.getId()).queue();
+                    if (!config.getAdminChannel().contains(textChannel.getId())) {
+                        config.getAdminChannel().add(textChannel.getId());
+                        event.reply("Admin channel added: " + textChannel.getId()).queue();
                     } else {
                         event.reply("Admin channel already existed in the list!").queue();
                     }
@@ -257,23 +267,23 @@ public class DiscordListener extends ListenerAdapter {
                 case "REMOVE-ADMIN-CHANNEL":
                     if (config.getAdminChannel() == null) config.setAdminChannel(new ArrayList<>());
 
-                    if (!config.getAdminChannel().contains(channelid.getId())) {
+                    if (!config.getAdminChannel().contains(textChannel.getId())) {
                         event.reply("Admin channel wasn't even in this list.").queue();
                     } else {
-                        config.getAdminChannel().remove(channelid.getId());
-                        event.reply("Admin channel removed: " + channelid.getId()).queue();
+                        config.getAdminChannel().remove(textChannel.getId());
+                        event.reply("Admin channel removed: " + textChannel.getId()).queue();
                     }
                     break;
                 case "ADD-PING-CHANNEL":
                     if (config.getPingChannels() == null) config.setPingChannels(new ArrayList<>());
-                    if (channelid == null) {
+                    if (channelID == null) {
                         event.reply("The channelid needs to be a channel to get the id of the channel. If it is not, it will not work.").queue();
                         break;
                     }
 
-                    if (!config.getPingChannels().contains(channelid.getId())) {
-                        config.getPingChannels().add(channelid.getId());
-                        event.reply("Ping channel added: " + channelid.getId()).queue();
+                    if (!config.getPingChannels().contains(textChannel.getId())) {
+                        config.getPingChannels().add(textChannel.getId());
+                        event.reply("Ping channel added: " + textChannel.getId()).queue();
                     } else {
                         event.reply("Ping channel already existed in the list!").queue();
                     }
@@ -281,11 +291,11 @@ public class DiscordListener extends ListenerAdapter {
                 case "REMOVE-PING-CHANNEL":
                     if (config.getPingChannels() == null) config.setPingChannels(new ArrayList<>());
 
-                    if (!config.getPingChannels().contains(channelid.getId())) {
+                    if (!config.getPingChannels().contains(textChannel.getId())) {
                         event.reply("Ping channel wasn't even in this list.").queue();
                     } else {
-                        config.getPingChannels().remove(channelid.getId());
-                        event.reply("Ping channel removed: " + channelid.getId()).queue();
+                        config.getPingChannels().remove(textChannel.getId());
+                        event.reply("Ping channel removed: " + textChannel.getId()).queue();
                     }
                     break;
                 default:
