@@ -345,8 +345,11 @@ public class DiscordListener extends ListenerAdapter {
             for (String s : messages) {
                 for (String d : data.getWords()) {
                     if (words.contains(d)) continue;
-                    String clean = d.trim().toLowerCase(Locale.ROOT);
-                    if (s.equals(clean)) {
+                    String cleanAllCharacters = d.trim().toLowerCase(Locale.ROOT);
+                    String clean = d.trim().toLowerCase(Locale.ROOT).replaceAll("[^A-Za-z0-9]", "");
+                    String cleanWithDash = d.trim().toLowerCase(Locale.ROOT).replaceAll("[^A-Za-z0-9-]", "");
+
+                    if (s.equals(cleanAllCharacters) || s.equals(clean) || s.equals(cleanWithDash)) {
                         words.add(d);
                         break;
                     }
