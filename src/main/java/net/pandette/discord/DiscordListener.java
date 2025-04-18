@@ -324,13 +324,17 @@ public class DiscordListener extends ListenerAdapter {
 
 
         String[] messageSplit = splitClean(event.getMessage().getContentRaw());
+
         List<String> messages = new ArrayList<>(Arrays.asList(messageSplit));
+
         for (MessageEmbed e : event.getMessage().getEmbeds()) {
             messages.addAll(Arrays.asList(splitClean(e.getTitle())));
             messages.addAll(Arrays.asList(splitClean(e.getDescription())));
+
             if (e.getAuthor() != null) {
                 messages.addAll(Arrays.asList(splitClean(e.getAuthor().getName())));
             }
+
             for (MessageEmbed.Field field : e.getFields()) {
                 messages.addAll(Arrays.asList(splitClean(field.getName())));
                 messages.addAll(Arrays.asList(splitClean(field.getValue())));
@@ -342,14 +346,17 @@ public class DiscordListener extends ListenerAdapter {
 
         for (PingData data : new ArrayList<>(config.getPingData())) {
             List<String> words = new ArrayList<>();
+
             for (String s : messages) {
+                String cleanString = s.trim().toLowerCase(Locale.ROOT);
+                String cleanAlphaDash = cleanString.replaceAll("[^A-Za-z0-9-]", "");
+                String cleanAlphaOnly = cleanAlphaDash.replace("-", "");
+
                 for (String d : data.getWords()) {
                     if (words.contains(d)) continue;
-                    String cleanAllCharacters = d.trim().toLowerCase(Locale.ROOT);
-                    String clean = d.trim().toLowerCase(Locale.ROOT).replaceAll("[^A-Za-z0-9]", "");
-                    String cleanWithDash = d.trim().toLowerCase(Locale.ROOT).replaceAll("[^A-Za-z0-9-]", "");
+                    String clean = d.trim().toLowerCase(Locale.ROOT);
 
-                    if (s.equals(cleanAllCharacters) || s.equals(clean) || s.equals(cleanWithDash)) {
+                    if (cleanString.equals(clean) || cleanAlphaDash.equals(clean) || cleanAlphaOnly.equals(clean)) {
                         words.add(d);
                         break;
                     }
@@ -388,6 +395,7 @@ public class DiscordListener extends ListenerAdapter {
 
     private String[] splitClean(String split) {
         if (split == null) return new String[]{};
+
         return split.replace("\n", " ").replace("/", " ").replace(":", " ").toLowerCase(Locale.ROOT).split(" ");
     }
 
